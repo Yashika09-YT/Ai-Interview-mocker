@@ -1,0 +1,913 @@
+// // // "use client";
+
+// // // import useSpeechToText from "react-hook-speech-to-text";
+// // // import React, { useEffect, useState } from "react";
+// // // import Image from "next/image";
+// // // import Webcam from "react-webcam"; // ✅ Correct import
+// // // import { Button } from "@/components/ui/button";
+// // // import { Mic, StopCircle } from "lucide-react";
+// // // import { toast } from "sonner";
+// // // import { chatSession } from "@/utils/GeminiAIModal";
+// // // // import { start } from "repl";
+
+// // // function RecordAnswerSection({ mockInterviewQuestion, activeQuestionIndex }) {
+// // //   const [userAnswer, setUserAnswer] = useState("");
+// // //   const {
+// // //     error,
+// // //     interimResult,
+// // //     isRecording,
+// // //     results,
+// // //     startSpeechToText,
+// // //     stopSpeechToText,
+// // //   } = useSpeechToText({
+// // //     continuous: true,
+// // //     useLegacyResults: false,
+// // //   });
+
+// // //   useEffect(() => {
+// // //     results.map((result) =>
+// // //       setUserAnswer((prevAns) => prevAns + result?.transcript)
+// // //     );
+// // //   }, [results]);
+
+// // //   const SaveUserAnswer = () => {
+// // //     if (isRecording) {
+// // //       stopSpeechToText();
+// // //       if (userAnswer?.length < 10) {
+// // //         toast("Error While Saving your answer ,please record again ");
+// // //         return;
+// // //       }
+// // //       const feedbackPrompt =
+// // //         "Question" +
+// // //         mockInterviewQuestion[activeQuestionIndex]?.question +
+// // //         ", User Answer:" +
+// // //         userAnswer +
+// // //         ",depends on question and user answer for give interview question  " +
+// // //         "pleasr give us rating for answer and feedback as area of improvement in just 3 to 5 lines to improve it in Json format with rating field and feedback field";
+// // //         const result=await chatSession.sendMessage(feedbackPrompt);
+// // //         const mockJsonResp= (result.response.text()).replace("```json", "").replace(
+// // //           "```",
+// // //           ""
+// // //         );
+// // //         console.log(mockJsonResp)
+// // //     } else {
+// // //       startSpeechToText();
+// // //     }
+// // //   };
+
+// // //   return (
+// // //     <div className="flex items-center justify-center flex-col">
+// // //       <div className="flex flex-col my-20 justify-center items-center rounded-lg p-5 relative">
+// // //         {/* Background Image */}
+// // //         <Image
+// // //           src="/webcam.png"
+// // //           width={200}
+// // //           height={200}
+// // //           alt="Webcam icon"
+// // //           className="absolute"
+// // //         />
+
+// // //         {/* Actual Webcam Component */}
+// // //         <Webcam
+// // //           mirrored={true}
+// // //           audio={false} // ✅ Disable microphone if not needed
+// // //           screenshotFormat="image/jpeg" // ✅ Capture images
+// // //           videoConstraints={{
+// // //             width: 640,
+// // //             height: 480,
+// // //             facingMode: "user", // ✅ Use front camera
+// // //           }}
+// // //           style={{
+// // //             height: 300,
+// // //             width: "100%",
+// // //             zIndex: 10,
+// // //             position: "relative",
+// // //           }}
+// // //         />
+// // //       </div>
+// // //       <Button variant="outline" className="my-10" onClick={SaveUserAnswer}>
+// // //         {isRecording ? (
+// // //           <h2 className="text-red-600 flex gap-2">
+// // //             <StopCircle />
+// // //             Stop Recording
+// // //           </h2>
+// // //         ) : (
+// // //           "Record Answer"
+// // //         )}
+// // //       </Button>
+// // //       <Button onClick={() => console.log(userAnswer)}>Show User Answer</Button>
+// // //     </div>
+// // //   );
+// // // }
+
+// // // export default RecordAnswerSection;
+
+// // "use client";
+
+// // import useSpeechToText from "react-hook-speech-to-text";
+// // import React, { useEffect, useState, useUser } from "react";
+// // import Image from "next/image";
+// // import Webcam from "react-webcam";
+// // import { Button } from "@/components/ui/button";
+// // import { StopCircle } from "lucide-react";
+// // import { toast } from "sonner";
+// // import { chatSession } from "@/utils/GeminiAIModal";
+// // import moment from "moment";
+
+// // function RecordAnswerSection({
+// //   mockInterviewQuestion,
+// //   activeQuestionIndex,
+// //   interviewData,
+// // }) {
+// //   const [userAnswer, setUserAnswer] = useState("");
+// //   const { user } = useUser();
+// //   const [loading, setloading] = useState(false);
+// //   const { isRecording, results, startSpeechToText, stopSpeechToText } =
+// //     useSpeechToText({
+// //       continuous: true,
+// //       useLegacyResults: false,
+// //     });
+
+// //   // Update `userAnswer` when `results` change
+// //   useEffect(() => {
+// //     if (results.length > 0) {
+// //       setUserAnswer(
+// //         (prevAns) => prevAns + " " + results.map((r) => r.transcript).join(" ")
+// //       );
+// //     }
+// //   }, [results]);
+
+// //   // Function to save user answer and fetch feedback
+// //   const SaveUserAnswer = async () => {
+// //     if (isRecording) {
+// //       setloading(true);
+// //       stopSpeechToText();
+
+// //       // Validate answer length
+// //       if (userAnswer.length < 10) {
+// //         setloading(false);
+// //         toast("Error: Please record a longer answer.");
+// //         return;
+// //       }
+
+// //       // Construct feedback prompt
+// //       const feedbackPrompt = `
+// //         Question: ${mockInterviewQuestion[activeQuestionIndex]?.question}
+// //         User Answer: ${userAnswer}
+// //         Provide feedback as JSON in the following format:
+// //         {
+// //           "rating": <score out of 10>,
+// //           "feedback": "<3-5 lines of improvement suggestions>"
+// //         }
+// //       `;
+
+// //       try {
+// //         // Send request to AI model
+// //         const result = await chatSession.sendMessage(feedbackPrompt);
+// //         const rawResponse = await result.response.text();
+
+// //         // Clean up and parse JSON response
+// //         const cleanedResponse = rawResponse
+// //           .replace("```json", "")
+// //           .replace("```", "");
+// //         const parsedResponse = JSON.parse(cleanedResponse);
+
+// //         console.log(parsedResponse);
+// //         toast(`Feedback received! Rating: ${parsedResponse.rating}/10`);
+// //         const JsonFeedbackResp = JSON.parse(parsedResponse);
+// //         const resp = await db.insert(userAnswer).values({
+// //           mockIdRef: interviewData?.mockId,
+// //           question: mockInterviewQuestion[activeQuestionIndex]?.question,
+// //           correctAns: mockInterviewQuestion[activeQuestionIndex]?.answer,
+// //           userAns: userAnswer,
+// //           feedback: JsonFeedbackResp?.feedback?.rating,
+// //           userEmail: user?.primaryEmailAddress?.emailAddress,
+// //           createdAt: moment().format("DD-MM-YYYY"),
+// //         });
+// //         if (resp) {
+// //           toast("user Answer recorded successfully");
+// //         }
+// //       } catch (error) {
+// //         console.error("Error fetching feedback:", error);
+// //         toast("An error occurred while processing your response.");
+// //       }
+// //       setloading(false);
+// //     } else {
+// //       startSpeechToText();
+// //     }
+// //   };
+
+// //   return (
+// //     <div className="flex items-center justify-center flex-col">
+// //       <div className="flex flex-col my-20 justify-center items-center rounded-lg p-5 relative">
+// //         {/* Background Image */}
+// //         <Image
+// //           src="/webcam.png"
+// //           width={200}
+// //           height={200}
+// //           alt="Webcam icon"
+// //           className="absolute"
+// //         />
+
+// //         {/* Actual Webcam Component */}
+// //         <Webcam
+// //           mirrored={true}
+// //           audio={false}
+// //           screenshotFormat="image/jpeg"
+// //           videoConstraints={{ width: 640, height: 480, facingMode: "user" }}
+// //           style={{
+// //             height: 300,
+// //             width: "100%",
+// //             zIndex: 10,
+// //             position: "relative",
+// //           }}
+// //         />
+// //       </div>
+// //       <Button
+// //         disabled={loading}
+// //         variant="outline"
+// //         className="my-10"
+// //         onClick={SaveUserAnswer}
+// //       >
+// //         {isRecording ? (
+// //           <h2 className="text-red-600 flex gap-2">
+// //             <StopCircle />
+// //             Stop Recording
+// //           </h2>
+// //         ) : (
+// //           "Record Answer"
+// //         )}
+// //       </Button>
+// //       <Button onClick={() => console.log(userAnswer)}>Show User Answer</Button>
+// //     </div>
+// //   );
+// // }
+
+// // export default RecordAnswerSection;
+// // -000000000
+// // "use client";
+// // import db from "@/utils/db";
+// // import useSpeechToText from "react-hook-speech-to-text";
+// // import React, { useEffect, useState } from "react";
+// // import Image from "next/image";
+// // import Webcam from "react-webcam";
+// // import { Button } from "@/components/ui/button";
+// // import { StopCircle } from "lucide-react";
+// // import { toast } from "sonner";
+// // import { chatSession } from "@/utils/GeminiAIModal";
+// // import moment from "moment";
+// // import { useUser } from "@clerk/nextjs"; // ✅ Corrected Import
+
+// // function RecordAnswerSection({
+// //   mockInterviewQuestion,
+// //   activeQuestionIndex,
+// //   interviewData,
+// //   db, // ✅ Ensure `db` is passed as a prop
+// // }) {
+// //   const [userAnswer, setUserAnswer] = useState("");
+// //   const { user } = useUser();
+// //   const [loading, setLoading] = useState(false);
+// //   const { isRecording, results, startSpeechToText, stopSpeechToText } =
+// //     useSpeechToText({
+// //       continuous: true,
+// //       useLegacyResults: false,
+// //     });
+
+// //   // Update `userAnswer` when `results` change
+// //   useEffect(() => {
+// //     if (results.length > 0) {
+// //       setUserAnswer(
+// //         (prevAns) => prevAns + " " + results.map((r) => r.transcript).join(" ")
+// //       );
+// //     }
+// //   }, [results]);
+
+// //   // Function to save user answer and fetch feedback
+// //   const SaveUserAnswer = async () => {
+// //     if (isRecording) {
+// //       stopSpeechToText();
+// //       setLoading(true);
+
+// //       // Validate answer length
+// //       if (userAnswer.length < 10) {
+// //         toast("Error: Please record a longer answer.");
+// //         setLoading(false);
+// //         return;
+// //       }
+
+// //       // Construct feedback prompt
+// //       const feedbackPrompt = `
+// //         Question: ${mockInterviewQuestion[activeQuestionIndex]?.question}
+// //         User Answer: ${userAnswer}
+// //         Provide feedback as JSON in the following format:
+// //         {
+// //           "rating": <score out of 10>,
+// //           "feedback": "<3-5 lines of improvement suggestions>"
+// //         }
+// //       `;
+
+// //       try {
+// //         // Send request to AI model
+// //         const result = await chatSession.sendMessage(feedbackPrompt);
+// //         const rawResponse = await result.response.text();
+
+// //         // Clean up and parse JSON response
+// //         const cleanedResponse = rawResponse
+// //           .replace("```json", "")
+// //           .replace("```", "");
+// //         const parsedResponse = JSON.parse(cleanedResponse);
+
+// //         console.log(parsedResponse);
+// //         toast(`Feedback received! Rating: ${parsedResponse.rating}/10`);
+
+// //         // ✅ Save to Database (Ensure correct ORM syntax)
+// //         await db.insert("user_answers").values({
+// //           mockIdRef: interviewData?.mockId,
+// //           question: mockInterviewQuestion[activeQuestionIndex]?.question,
+// //           correctAns: mockInterviewQuestion[activeQuestionIndex]?.answer,
+// //           userAns: userAnswer,
+// //           feedback: parsedResponse?.feedback, // ✅ Corrected Feedback Field
+// //           rating: parsedResponse?.rating, // ✅ Added Rating
+// //           userEmail: user?.primaryEmailAddress?.emailAddress,
+// //           createdAt: moment().format("YYYY-MM-DD"), // ✅ Standard date format
+// //         });
+
+// //         toast("User answer recorded successfully.");
+// //       } catch (error) {
+// //         console.error("Error fetching feedback:", error);
+// //         toast("An error occurred while processing your response.");
+// //       } finally {
+// //         setLoading(false);
+// //       }
+// //     } else {
+// //       startSpeechToText();
+// //     }
+// //   };
+
+// //   return (
+// //     <div className="flex items-center justify-center flex-col">
+// //       <div className="flex flex-col my-20 justify-center items-center rounded-lg p-5 relative">
+// //         {/* Background Image */}
+// //         <Image
+// //           src="/webcam.png"
+// //           width={200}
+// //           height={200}
+// //           alt="Webcam icon"
+// //           className="absolute"
+// //         />
+
+// //         {/* Actual Webcam Component */}
+// //         <Webcam
+// //           mirrored={true}
+// //           audio={false}
+// //           screenshotFormat="image/jpeg"
+// //           videoConstraints={{ width: 640, height: 480, facingMode: "user" }}
+// //           style={{
+// //             height: 300,
+// //             width: "100%",
+// //             zIndex: 10,
+// //             position: "relative",
+// //           }}
+// //         />
+// //       </div>
+// //       <Button
+// //         disabled={loading}
+// //         variant="outline"
+// //         className="my-10"
+// //         onClick={SaveUserAnswer}
+// //       >
+// //         {isRecording ? (
+// //           <h2 className="text-red-600 flex gap-2">
+// //             <StopCircle />
+// //             Stop Recording
+// //           </h2>
+// //         ) : (
+// //           "Record Answer"
+// //         )}
+// //       </Button>
+// //       <Button onClick={() => console.log(userAnswer)}>Show User Answer</Button>
+// //     </div>
+// //   );
+// // }
+
+// // export default RecordAnswerSection;
+// "use client";
+// import db from "@/utils/db"; // Ensure this import is correct for your setup
+// import useSpeechToText from "react-hook-speech-to-text";
+// import React, { useEffect, useState } from "react";
+// import Image from "next/image";
+// import Webcam from "react-webcam";
+// import { Button } from "@/components/ui/button";
+// import { StopCircle } from "lucide-react";
+// import { toast } from "sonner";
+// import { chatSession } from "@/utils/GeminiAIModal";
+// import moment from "moment";
+// import { useUser } from "@clerk/nextjs"; // Corrected
+
+// function RecordAnswerSection({
+//   mockInterviewQuestion,
+//   activeQuestionIndex,
+//   interviewData,
+// }) {
+//   const [userAnswer, setUserAnswer] = useState("");
+//   const { user } = useUser();
+//   const [loading, setLoading] = useState(false);
+//   const { isRecording, results, startSpeechToText, stopSpeechToText } =
+//     useSpeechToText({
+//       continuous: true,
+//       useLegacyResults: false,
+//     });
+
+//   // Update `userAnswer` when `results` change
+//   useEffect(() => {
+//     if (results.length > 0) {
+//       setUserAnswer(
+//         (prevAns) => prevAns + " " + results.map((r) => r.transcript).join(" ")
+//       );
+//     }
+//   }, [results]);
+//   useEffect(() => {
+//     if (!isRecording && userAnswer.length > 10) {
+//       UpdateUserAnswer();
+//     }
+//     if (userAnswer.length < 10) {
+//       toast("Error: Please record a longer answer.");
+//       setLoading(false);
+//       return;
+//     }
+//   }, [userAnswer]);
+
+//   // Function to save user answer and fetch feedback
+//   const StartStopRecording = async () => {
+//     if (isRecording) {
+//       stopSpeechToText();
+//       // setLoading(true);
+
+//       // Validate answer length
+//     }
+//     stopSpeechToText();
+//     // Construct feedback prompt
+//   };
+//   const UpdateUserAnswer = async () => {
+//     console.log(userAnswer);
+//     setLoading(true);
+//     const feedbackPrompt = `
+//         Question: ${mockInterviewQuestion[activeQuestionIndex]?.question}
+//         User Answer: ${userAnswer}
+//         Provide feedback as JSON in the following format:
+//         {
+//           "rating": <score out of 10>,
+//           "feedback": "<3-5 lines of improvement suggestions>"
+//         }
+//       `;
+
+//     try {
+//       // Send request to AI model
+//       const result = await chatSession.sendMessage(feedbackPrompt);
+//       const rawResponse = await result.response.text();
+
+//       // Clean up and parse JSON response
+//       const cleanedResponse = rawResponse
+//         .replace("```json", "")
+//         .replace("```", "");
+//       const parsedResponse = JSON.parse(cleanedResponse);
+
+//       console.log(parsedResponse);
+//       toast(`Feedback received! Rating: ${parsedResponse.rating}/10`);
+
+//       // ✅ Check if db is defined and handle the insert accordingly
+//       if (!db) {
+//         console.error("Database instance is undefined.");
+//         toast("Database error, please contact support.");
+//         setLoading(false);
+//         return;
+//       }
+
+//       // ✅ Insert into the database using Prisma (or your chosen DB)
+//       await db.userAnswers.create({
+//         data: {
+//           mockIdRef: interviewData?.mockId,
+//           question: mockInterviewQuestion[activeQuestionIndex]?.question,
+//           correctAns: mockInterviewQuestion[activeQuestionIndex]?.answer,
+//           userAns: userAnswer,
+//           feedback: parsedResponse?.feedback, // Corrected feedback field
+//           rating: parsedResponse?.rating, // Added rating field
+//           userEmail: user?.primaryEmailAddress?.emailAddress,
+//           createdAt: moment().format("YYYY-MM-DD"), // Standard date format
+//         },
+//       });
+
+//       toast("User answer recorded successfully.");
+//     } catch (error) {
+//       console.error("Error fetching feedback:", error);
+//       toast("An error occurred while processing your response.");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+//   return (
+//     <div className="flex items-center justify-center flex-col">
+//       <div className="flex flex-col my-20 justify-center items-center rounded-lg p-5 relative">
+//         {/* Background Image */}
+//         <Image
+//           src="/webcam.png"
+//           width={200}
+//           height={200}
+//           alt="Webcam icon"
+//           className="absolute"
+//         />
+
+//         {/* Actual Webcam Component */}
+//         <Webcam
+//           mirrored={true}
+//           audio={false}
+//           screenshotFormat="image/jpeg"
+//           videoConstraints={{ width: 640, height: 480, facingMode: "user" }}
+//           style={{
+//             height: 300,
+//             width: "100%",
+//             zIndex: 10,
+//             position: "relative",
+//           }}
+//         />
+//       </div>
+//       <Button
+//         disabled={loading}
+//         variant="outline"
+//         className="my-10"
+//         onClick={StartStopRecording}
+//       >
+//         {isRecording ? (
+//           <h2 className="text-red-600 flex gap-2">
+//             <StopCircle />
+//             Stop Recording
+//           </h2>
+//         ) : (
+//           "Record Answer"
+//         )}
+//       </Button>
+//       <Button onClick={() => console.log(userAnswer)}>Show User Answer</Button>
+//     </div>
+//   );
+// }
+
+// export default RecordAnswerSection;
+
+// "use client";
+// import db from "@/utils/db";
+// import useSpeechToText from "react-hook-speech-to-text";
+// import React, { useEffect, useState } from "react";
+// import Image from "next/image";
+// import Webcam from "react-webcam";
+// import { Button } from "@/components/ui/button";
+// import { StopCircle } from "lucide-react";
+// import { toast } from "sonner";
+// import { chatSession } from "@/utils/GeminiAIModal";
+// import moment from "moment";
+// import { useUser } from "@clerk/nextjs";
+// import { UserAnswer } from "@/utils/schema";
+
+// function RecordAnswerSection({
+//   mockInterviewQuestion,
+//   activeQuestionIndex,
+//   interviewData,
+// }) {
+//   const [userAnswer, setUserAnswer] = useState("");
+//   const { user } = useUser();
+//   const [loading, setLoading] = useState(false);
+//   const { isRecording, results, startSpeechToText, stopSpeechToText } =
+//     useSpeechToText({
+//       continuous: true,
+//       useLegacyResults: false,
+//     });
+
+//   // Update `userAnswer` when `results` change
+//   useEffect(() => {
+//     if (results.length > 0) {
+//       setUserAnswer(
+//         (prevAns) => prevAns + " " + results.map((r) => r.transcript).join(" ")
+//       );
+//     }
+//   }, [results]);
+
+//   useEffect(() => {
+//     if (!isRecording && userAnswer.length > 10) {
+//       updateUserAnswer();
+//     }
+//     if (userAnswer.length < 10) {
+//       toast("Error: Please record a longer answer.");
+//       setLoading(false);
+//     }
+//   }, [userAnswer]);
+
+//   // Function to save user answer and fetch feedback
+//   const StartStopRecording = async () => {
+//     if (isRecording) {
+//       stopSpeechToText();
+//     } else {
+//       startSpeechToText();
+//     }
+//   };
+
+//   const updateUserAnswer = async () => {
+//     setLoading(true);
+//     const feedbackPrompt = `
+//         Question: ${mockInterviewQuestion[activeQuestionIndex]?.question}
+//         User Answer: ${userAnswer}
+//         Provide feedback as JSON in the following format:
+//         {
+//           "rating": <score out of 10>,
+//           "feedback": "<3-5 lines of improvement suggestions>"
+//         }
+//       `;
+
+//     try {
+//       // Send request to AI model
+//       const result = await chatSession.sendMessage(feedbackPrompt);
+//       const rawResponse = await result.response.text();
+
+//       // Clean up and parse JSON response
+//       const cleanedResponse = rawResponse
+//         .replace("```json", "")
+//         .replace("```", "");
+//       const parsedResponse = JSON.parse(cleanedResponse);
+
+//       console.log(parsedResponse);
+//       toast(`Feedback received! Rating: ${parsedResponse.rating}/10`);
+
+//       console.log("82 line");
+//       // ✅ Check if db is defined and handle the insert accordingly
+//       if (!db) {
+//         console.error("Database instance is undefined.");
+//         toast("Database error, please contact support.");
+//         setLoading(false);
+//         return;
+//       }
+//       console.log("userAnswer Model:", db?.userAnswer);
+//       console.log("no error on 91 line");
+
+//       // ✅ Insert into the database using Prisma (or your chosen DB)
+//       // await db.userAnswer.create({
+//       //   data: {
+//       //     mockIdRef: interviewData?.mockId,
+//       //     question: mockInterviewQuestion[activeQuestionIndex]?.question,
+//       //     correctAns: mockInterviewQuestion[activeQuestionIndex]?.answer,
+//       //     userAns: userAnswer,
+//       //     feedback: parsedResponse?.feedback, // Corrected feedback field
+//       //     rating: parsedResponse?.rating, // Added rating field
+//       //     userEmail: user?.primaryEmailAddress?.emailAddress,
+//       //     createdAt: moment().format("YYYY-MM-DD"), // Standard date format
+//       //   },
+//       // });
+//       try {
+//         if (!db?.userAnswer) {
+//           throw new Error("UserAnswer model is not defined in the database.");
+//         }
+
+//         await db.userAnswer.create({
+//           data: {
+//             mockIdRef: interviewData?.mockId,
+//             question: mockInterviewQuestion[activeQuestionIndex]?.question,
+//             correctAns: mockInterviewQuestion[activeQuestionIndex]?.answer,
+//             userAns: userAnswer,
+//             feedback: parsedResponse?.feedback,
+//             rating: parsedResponse?.rating,
+//             userEmail: user?.primaryEmailAddress?.emailAddress,
+//             createdAt: moment().format("YYYY-MM-DD"),
+//           },
+//         });
+//       } catch (error) {
+//         console.error("Error inserting user answer into the database:", error);
+//         toast("Database error: " + error.message);
+//       }
+
+//       toast("User answer recorded successfully.");
+//     } catch (error) {
+//       console.error("Error fetching feedback:", error);
+//       toast("An error occurred while processing your response.");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   return (
+//     <div className="flex items-center justify-center flex-col">
+//       <div className="flex flex-col my-20 justify-center items-center rounded-lg p-5 relative">
+//         {/* Background Image */}
+//         <Image
+//           src="/webcam.png"
+//           width={200}
+//           height={200}
+//           alt="Webcam icon"
+//           className="absolute"
+//         />
+
+//         {/* Actual Webcam Component */}
+//         <Webcam
+//           mirrored={true}
+//           audio={false}
+//           screenshotFormat="image/jpeg"
+//           videoConstraints={{ width: 640, height: 480, facingMode: "user" }}
+//           style={{
+//             height: 300,
+//             width: "100%",
+//             zIndex: 10,
+//             position: "relative",
+//           }}
+//         />
+//       </div>
+
+//       <Button
+//         disabled={loading}
+//         variant="outline"
+//         className="my-10"
+//         onClick={StartStopRecording}
+//       >
+//         {isRecording ? (
+//           <h2 className="text-red-600 flex gap-2">
+//             <StopCircle />
+//             Stop Recording
+//           </h2>
+//         ) : (
+//           "Record Answer"
+//         )}
+//       </Button>
+
+//       <Button onClick={() => console.log(userAnswer)}>Show User Answer</Button>
+//     </div>
+//   );
+// }
+
+// export default RecordAnswerSection;
+
+//*************************************************************
+
+// "use client";
+
+// import useSpeechToText from "react-hook-speech-to-text";
+// import React, { useEffect, useState } from "react";
+// import Image from "next/image";
+// import Webcam from "react-webcam"; // ✅ Correct import
+// import { Button } from "@/components/ui/button";
+// import { Mic, StopCircle } from "lucide-react";
+// import { toast } from "sonner";
+// import { chatSession } from "@/utils/GeminiAIModal";
+// import { UserAnswer } from "@/utils/schema";
+// import db from "@/utils/db";
+// // import { start } from "repl";
+
+// function RecordAnswerSection({
+//   mockInterviewQuestion,
+//   activeQuestionIndex,
+//   interviewData,
+// }) {
+//   const [userAnswer, setUserAnswer] = useState("");
+//   const [loading, setLoading] = useState(false);
+//   const {
+//     error,
+//     interimResult,
+//     isRecording,
+//     results,
+//     startSpeechToText,
+//     stopSpeechToText,
+//   } = useSpeechToText({
+//     continuous: true,
+//     useLegacyResults: false,
+//   });
+
+//   useEffect(() => {
+//     results.map((result) =>
+//       setUserAnswer((prevAns) => prevAns + result?.transcript)
+//     );
+//   }, [results]);
+//   useEffect(() => {
+//     if (!isRecording && userAnswer.length > 10) {
+//       UpdateUserAnswer();
+//     }
+//     if (userAnswer.length < 10) {
+//       toast("Error: Please record a longer answer.");
+//       setLoading(false);
+//     }
+//   }, [userAnswer]);
+
+//   const StartStopRecording = async () => {
+//     if (isRecording) {
+//       setLoading(true);
+//       stopSpeechToText();
+//       if (userAnswer?.length < 10) {
+//         toast("Error While Saving your answer ,please record again ");
+//         return;
+//       }
+//       const feedbackPrompt =
+//         "Question" +
+//         mockInterviewQuestion[activeQuestionIndex]?.question +
+//         ", User Answer:" +
+//         userAnswer +
+//         ",depends on question and user answer for give interview question  " +
+//         "pleasr give us rating for answer and feedback as area of improvement in just 3 to 5 lines to improve it in Json format with rating field and feedback field";
+//       const result = await chatSession.sendMessage(feedbackPrompt);
+//       const mockJsonResp = result.response
+//         .text()
+//         .replace("```json", "")
+//         .replace("```", "");
+//       console.log(mockJsonResp);
+//       const JsonFeedbackResp = JSON.parse(mockJsonResp);
+
+//       const resp = await db.insert(UserAnswer).values({
+//         mockIdRef: interviewData?.mockId,
+//         question: mockInterviewQuestion[activeQuestionIndex]?.question,
+//         correctAns: mockInterviewQuestion[activeQuestionIndex]?.answer,
+//         userAns: userAnswer,
+//         feedback: parsedResponse?.feedback,
+//         rating: parsedResponse?.rating,
+//         userEmail: user?.primaryEmailAddress?.emailAddress,
+//         createdAt: moment().format("YYYY-MM-DD"),
+//       });
+//       if (resp) {
+//         toast("user answer recorded");
+//       }
+//       setLoading(false);
+//     } else {
+//       startSpeechToText();
+//     }
+//   };
+
+//   const UpdateUserAnswer = async () => {
+//     console.log(userAnswer);
+//     setLoading(true);
+//     const feedbackPrompt =
+//       "Question" +
+//       mockInterviewQuestion[activeQuestionIndex]?.question +
+//       ", User Answer:" +
+//       userAnswer +
+//       ",depends on question and user answer for give interview question  " +
+//       "pleasr give us rating for answer and feedback as area of improvement in just 3 to 5 lines to improve it in Json format with rating field and feedback field";
+//     const result = await chatSession.sendMessage(feedbackPrompt);
+//     const mockJsonResp = result.response
+//       .text()
+//       .replace("```json", "")
+//       .replace("```", "");
+//     console.log(mockJsonResp);
+//     const JsonFeedbackResp = JSON.parse(mockJsonResp);
+
+//     const resp = await db.insert(UserAnswer).values({
+//       mockIdRef: interviewData?.mockId,
+//       question: mockInterviewQuestion[activeQuestionIndex]?.question,
+//       correctAns: mockInterviewQuestion[activeQuestionIndex]?.answer,
+//       userAns: userAnswer,
+//       feedback: parsedResponse?.feedback,
+//       rating: parsedResponse?.rating,
+//       userEmail: user?.primaryEmailAddress?.emailAddress,
+//       createdAt: moment().format("YYYY-MM-DD"),
+//     });
+//     if (resp) {
+//       toast("user answer recorded");
+//     }
+//     setLoading(false);
+//   };
+//   return (
+//     <div className="flex items-center justify-center flex-col">
+//       <div className="flex flex-col my-20 justify-center items-center rounded-lg p-5 relative">
+//         {/* Background Image */}
+//         <Image
+//           src="/webcam.png"
+//           width={200}
+//           height={200}
+//           alt="Webcam icon"
+//           className="absolute"
+//         />
+
+//         {/* Actual Webcam Component */}
+//         <Webcam
+//           mirrored={true}
+//           audio={false} // ✅ Disable microphone if not needed
+//           screenshotFormat="image/jpeg" // ✅ Capture images
+//           videoConstraints={{
+//             width: 640,
+//             height: 480,
+//             facingMode: "user", // ✅ Use front camera
+//           }}
+//           style={{
+//             height: 300,
+//             width: "100%",
+//             zIndex: 10,
+//             position: "relative",
+//           }}
+//         />
+//       </div>
+//       <Button variant="outline" className="my-10" onClick={StartStopRecording}>
+//         {isRecording ? (
+//           <h2 className="text-red-600 flex gap-2">
+//             <StopCircle />
+//             Stop Recording
+//           </h2>
+//         ) : (
+//           "Record Answer"
+//         )}
+//       </Button>
+//       <Button onClick={() => console.log(userAnswer)}>Show User Answer</Button>
+//     </div>
+//   );
+// }
+
+// export default RecordAnswerSection;
