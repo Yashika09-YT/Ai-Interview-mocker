@@ -1,9 +1,5 @@
 Project Review Ai-interview Simlator:-
 https://github.com/Yashika09-YT/Ai-Interview-mocker/issues/1#issue-2856148329
-
-
-
-
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
